@@ -25,6 +25,7 @@ class Graph
         $this->build_distance_matrix();
 
         $this->dijkstra_round(0);
+        $this->floyd_warshall_round();
     }
 
     function build_adj_matrix()
@@ -118,22 +119,6 @@ class Graph
         echo "\n";
     }
 
-    function test(){
-        $q = new SplQueue();
-        $q->enqueue(1);
-        $q->enqueue(2);
-        $q->enqueue(3);
-
-        echo $q->dequeue();
-
-        $q = new SplStack();
-        $q->push(1);
-        $q->push(2);
-        $q->push(3);
-
-        echo $q->pop();
-    }
-
     function matrix_init($default)
     {
         $matrix = [];
@@ -197,6 +182,25 @@ class Graph
                     }
 
                     $queue->enqueue($a);
+                }
+            }
+        }
+
+        return $ways;
+    }
+
+    function floyd_warshall_round()
+    {
+        $ways = $this->distance_matrix;
+
+        for ($k = 0; $k < $this->v_num; $k++) {
+            for ($i = 0; $i < $this->v_num; $i++) {
+                for ($j = 0; $j < $this->v_num; $j++) {
+                    if($i == $j) continue;
+
+                    $dist = min($ways[$i][$j], $ways[$i][$k] + $ways[$k][$j]);
+                    $ways[$i][$j] = $dist;
+                    $ways[$j][$i] = $dist;
                 }
             }
         }
