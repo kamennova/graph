@@ -5,6 +5,7 @@ class Graph
     public $v_num;
     public $edges;
     public $adj_matrix;
+    public $distance_matrix;
 
     /**
      * Graph constructor.
@@ -16,23 +17,19 @@ class Graph
         $this->v_num = $v_num;
         $this->edges = $edges;
         $this->build_adj_matrix();
-        $this->matrix_output();
+        $this->matrix_output($this->adj_matrix);
 
         $this->depth_first_round();
         $this->breadth_first_round();
+
+        $this->build_distance_matrix();
+
+        $this->dijkstra_round(0);
     }
 
     function build_adj_matrix()
     {
-        $this->adj_matrix = [];
-
-        for ($i = 0; $i < $this->v_num; $i++) {
-            $this->adj_matrix[$i] = [];
-
-            for ($a = 0; $a < $this->v_num; $a++) {
-                $this->adj_matrix[$i][$a] = 0;
-            }
-        }
+        $this->adj_matrix = $this->matrix_init(0);
 
         foreach ($this->edges as $edge) {
             $u = $edge[0];
@@ -43,7 +40,7 @@ class Graph
         }
     }
 
-    function matrix_output()
+    function matrix_output($matrix)
     {
         echo "  | ";
         for ($i = 0; $i < $this->v_num; $i++) {
@@ -57,7 +54,7 @@ class Graph
         for ($i = 0; $i < $this->v_num; $i++) {
             echo str_pad($i, 2, ' ', STR_PAD_LEFT) . '| ';
 
-            foreach ($this->adj_matrix[$i] as $item) {
+            foreach ($matrix[$i] as $item) {
                 echo str_pad($item, 2, ' ', STR_PAD_LEFT) . ' ';
             }
 
@@ -65,7 +62,7 @@ class Graph
         }
     }
 
-    function breadth_first_round()
+    function depth_first_round()
     {
         $start = 0;
         $marked = [];
@@ -88,23 +85,21 @@ class Graph
                     $waiting[$a] = 1;
                 }
             }
-
-            var_dump($stack);
         }
 
         echo "\n";
     }
 
-    function depth_first_round()
+    function breadth_first_round()
     {
         $start = 0;
         $marked = [];
         $waiting = [];
         $queue = new SplQueue();
-        $queue->push($start);
+        $queue->enqueue($start);
 
         while (!$queue->isEmpty()) {
-            $v = $queue->pop();
+            $v = $queue->dequeue();
 
             echo $v . ' -> ';
             $marked[$v] = 1;
@@ -114,12 +109,98 @@ class Graph
                 $u = $this->adj_matrix[$v][$a];
 
                 if ($u === 1 && !isset($marked[$a]) && !isset($waiting[$a])) {
-                    $queue->push($a);
+                    $queue->enqueue($a);
                     $waiting[$a] = 1;
                 }
             }
         }
 
         echo "\n";
+    }
+
+    function test(){
+        $q = new SplQueue();
+        $q->enqueue(1);
+        $q->enqueue(2);
+        $q->enqueue(3);
+
+        echo $q->dequeue();
+
+        $q = new SplStack();
+        $q->push(1);
+        $q->push(2);
+        $q->push(3);
+
+        echo $q->pop();
+    }
+
+    function matrix_init($default)
+    {
+        $matrix = [];
+
+        for ($i = 0; $i < $this->v_num; $i++) {
+            $matrix[$i] = [];
+
+            for ($a = 0; $a < $this->v_num; $a++) {
+                $matrix[$i][$a] = $default;
+            }
+        }
+
+        return $matrix;
+    }
+
+    function build_distance_matrix()
+    {
+        $this->distance_matrix = $this->matrix_init(INF);
+
+        foreach ($this->edges as $edge) {
+            $u = $edge[0];
+            $v = $edge[1];
+            $dist = $edge[2];
+
+            $this->distance_matrix[$u][$v] = $dist;
+            $this->distance_matrix[$v][$u] = $dist;
+        }
+    }
+
+    function dijkstra_round($start)
+    {
+        /**
+         * @var array $ways - array of ways to start lengths
+         */
+        $ways = [];
+
+        for ($i = 0; $i < $this->v_num; $i++) {
+            $ways[$i] = INF;
+        }
+
+        $ways[$start] = 0;
+
+        $marked = [];
+
+        $queue = new SplQueue();
+        $queue->enqueue($start);
+
+        while (!$queue->isEmpty()) {
+            $v = $queue->dequeue();
+            $marked[$v] = 1;
+
+            for ($a = 0; $a < $this->v_num; $a++) {
+                $u = $this->adj_matrix[$v][$a];
+
+                if ($u === 1 && !isset ($marked[$a])) {
+                    $dist = $this->distance_matrix[$v][$a] // distance from current to next vertex
+                        + $ways[$v]; // distance from start to current vertex
+
+                    if ($dist < $ways[$a]) {
+                        $ways[$a] = $dist;
+                    }
+
+                    $queue->enqueue($a);
+                }
+            }
+        }
+
+        return $ways;
     }
 }
